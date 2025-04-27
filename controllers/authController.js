@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
 const sendEmail = require("../utils/emailSender");
 const crypto = require("crypto");
+const emailjs = require("@emailjs/nodejs");
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -153,29 +154,40 @@ exports.forgotPassword = async (req, res, next) => {
     const resetToken = user.createPasswordResetToken();
     await user.save({ validateBeforeSave: false });
 
-    // 3) Send it to user's email
+    // 3) Send it to user's email using EmailJS
     const resetURL = `${req.protocol}://${req.get(
       "host"
     )}/api/v1/auth/resetPassword/${resetToken}`;
 
-    const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
-
     try {
-      await sendEmail({
-        email: user.email,
-        subject: "Your password reset token (valid for 10 min)",
-        message,
+      emailjs.init({
+        publicKey: process.env.EMAILJS_PUBLIC_KEY,
+        privateKey: process.env.EMAILJS_PRIVATE_KEY,
       });
+
+      await emailjs.send(
+        process.env.EMAILJS_SERVICE_ID,
+        process.env.EMAILJS_TEMPLATE_ID,
+        {
+          to_email: user.email,
+          subject: "Your password reset token (valid for 10 min)",
+          message: `Forgot your password? Click the link below to reset it:\n${resetURL}\nIf you didn't request this, please ignore this email.`,
+          reset_link: resetURL,
+          from_name: "Video Editor Portfolio",
+        }
+      );
 
       res.status(200).json({
         status: "success",
-        message: "Token sent to email!",
+        message: "Password reset link sent to email!",
       });
     } catch (err) {
+      // Reset the token if email fails
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;
       await user.save({ validateBeforeSave: false });
 
+      console.error("EmailJS Error:", err);
       return res.status(500).json({
         status: "fail",
         message: "There was an error sending the email. Try again later!",
@@ -188,7 +200,6 @@ exports.forgotPassword = async (req, res, next) => {
     });
   }
 };
-
 
 // In controllers/authController.js
 exports.updatePassword = async (req, res, next) => {

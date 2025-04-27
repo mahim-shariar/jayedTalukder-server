@@ -1,38 +1,32 @@
-const nodemailer = require("nodemailer");
+const emailjs = require("@emailjs/nodejs");
 
-const sendEmail = async (options) => {
-  // Create reusable transporter object
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_EMAIL,
-      pass: process.env.SMTP_PASSWORD,
-    },
-    tls: {
-      // For services that don't have valid SSL certs
-      rejectUnauthorized: false,
-    },
-  });
-
-  // Email content
-  const message = {
-    from: `Video Editor Portfolio <${process.env.SMTP_EMAIL}>`,
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-    // html: options.html (for HTML emails)
-  };
-
-  // Send email
+const sendPasswordResetEmail = async (options) => {
   try {
-    await transporter.sendMail(message);
-    console.log("Email sent successfully");
+    // Initialize EmailJS with your credentials
+    emailjs.init({
+      publicKey: process.env.EMAILJS_PUBLIC_KEY,
+      privateKey: process.env.EMAILJS_PRIVATE_KEY, // Only needed for server-side
+    });
+
+    // Send the email
+    const response = await emailjs.send(
+      process.env.EMAILJS_SERVICE_ID,
+      process.env.EMAILJS_TEMPLATE_ID,
+      {
+        to_email: options.email,
+        subject: options.subject,
+        message: options.message,
+        reset_link: options.resetUrl, // If you're including a reset link
+        from_name: "Video Editor Portfolio",
+      }
+    );
+
+    console.log("Email sent successfully:", response);
+    return response;
   } catch (error) {
     console.error("Error sending email:", error);
     throw new Error("Email could not be sent");
   }
 };
 
-module.exports = sendEmail;
+module.exports = sendPasswordResetEmail;
