@@ -4,53 +4,110 @@ const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
-// Load env vars
+// Load environment variables
 dotenv.config({ path: "./.env" });
 
-// Connect to database
+// Database connection
 const connectDB = require("./config/db");
 connectDB();
 
-// Route files
+// Route imports
 const authRoutes = require("./routes/authRoutes");
 const videoReelRoutes = require("./routes/videoReelRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 
-// Initialize app
+// Initialize Express app
 const app = express();
 
-// Body parser
-app.use(express.json());
+// Middleware
+app.use(express.json()); // Body parser
+app.use(cookieParser()); // Cookie parser
 
-// Cookie parser
-app.use(cookieParser());
+// Enhanced CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL, // Primary frontend URL
+  process.env.FRONTEND_URL.replace(/\/$/, ""), // Without trailing slash
+  process.env.FRONTEND_URL + "/", // With trailing slash
+  "http://localhost:3000", // Local development
+  "http://localhost:3000/", // Local development with slash
+].filter(Boolean); // Remove any undefined values
 
-// Enable CORS with dynamic origin from env
 const corsOptions = {
-  origin: process.env.FRONTEND_URL,
-  credentials: true, // to allow cookies to be sent
-  optionsSuccessStatus: 200, // some legacy browsers choke on 204
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Check if the origin is in the allowed list
+    if (
+      allowedOrigins.some((allowedOrigin) => {
+        return (
+          origin === allowedOrigin ||
+          origin.replace(/\/$/, "") === allowedOrigin.replace(/\/$/, "")
+        );
+      })
+    ) {
+      callback(null, true);
+    } else {
+      console.error(`CORS blocked for origin: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+  ],
+  optionsSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
 
-// Mount routers
+// API routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/video-reels", videoReelRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy" });
+});
 
 // Error handling middleware
 const errorHandler = require("./middleware/error");
 app.use(errorHandler);
 
+// Server configuration
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(
+    `Server running in ${
+      process.env.NODE_ENV || "development"
+    } mode on port ${PORT}`
+  );
 });
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err, promise) => {
-  console.log(`Error: ${err.message}`);
-  // Close server & exit process
+  console.error(`Error: ${err.message}`);
+  console.error("Unhandled Rejection at:", promise);
   server.close(() => process.exit(1));
+});
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.error(`Error: ${err.message}`);
+  console.error("Uncaught Exception thrown:", err);
+  server.close(() => process.exit(1));
+});
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received. Shutting down gracefully");
+  server.close(() => {
+    console.log("Process terminated");
+  });
 });
