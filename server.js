@@ -79,7 +79,7 @@ app.get("/health", (req, res) => {
 const errorHandler = require("./middleware/error");
 app.use(errorHandler);
 
-// Server configuration
+//  configuration
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
