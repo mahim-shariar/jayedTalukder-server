@@ -1,4 +1,5 @@
 const VideoReel = require("../models/VideoReel");
+const cloudinary = require("../utils/cloudinary");
 
 exports.getAllVideoReels = async (req, res, next) => {
   try {
@@ -72,14 +73,24 @@ exports.getVideoReel = async (req, res, next) => {
 
 exports.createVideoReel = async (req, res, next) => {
   try {
-    const { title, description, videoUrl, thumbnailUrl, tags, category } =
-      req.body;
+    const {
+      title,
+      description,
+      videoUrl,
+      videoCloudId,
+      thumbnailUrl,
+      thumbnailCloudId,
+      tags,
+      category,
+    } = req.body;
 
     const newVideoReel = await VideoReel.create({
       title,
       description,
       videoUrl,
+      videoCloudId,
       thumbnailUrl,
+      thumbnailCloudId,
       category,
       tags,
       user: req.user.id, // assuming you're using authentication
@@ -134,7 +145,8 @@ exports.updateVideoReel = async (req, res, next) => {
 
 exports.deleteVideoReel = async (req, res, next) => {
   try {
-    const videoReel = await VideoReel.findByIdAndDelete(req.params.id);
+    // First find the video reel to get the Cloudinary IDs
+    const videoReel = await VideoReel.findById(req.params.id);
 
     if (!videoReel) {
       return res.status(404).json({
@@ -142,6 +154,21 @@ exports.deleteVideoReel = async (req, res, next) => {
         message: "No video reel found with that ID",
       });
     }
+
+    // Delete video from Cloudinary if videoCloudId exists
+    if (videoReel.videoCloudId) {
+      await cloudinary.uploader.destroy(videoReel.videoCloudId, {
+        resource_type: "video",
+      });
+    }
+
+    // Delete thumbnail from Cloudinary if thumbnailCloudId exists
+    if (videoReel.thumbnailCloudId) {
+      await cloudinary.uploader.destroy(videoReel.thumbnailCloudId);
+    }
+
+    // Now delete the video reel document from MongoDB
+    await VideoReel.findByIdAndDelete(req.params.id);
 
     res.status(204).json({
       status: "success",

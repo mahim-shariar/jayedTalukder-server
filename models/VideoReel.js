@@ -12,24 +12,18 @@ const videoReelSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please provide a video URL"],
   },
+  videoCloudId: {
+    type: String,
+  },
   thumbnailUrl: {
+    type: String,
+  },
+  thumbnailCloudId: {
     type: String,
   },
   category: {
     type: String,
     required: [true, "Please enter a category"],
-    enum: [
-      "wedding",
-      "commercial",
-      "travel",
-      "shortfilm",
-      "islamic",
-      "podcast",
-      "myFirstEdit",
-      "bloopers",
-      "behindTheScenes",
-      "mySelfIntro",
-    ],
   },
   tags: [String],
   user: {

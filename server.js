@@ -12,6 +12,7 @@ const connectDB = require("./config/db");
 connectDB();
 
 // Route imports
+const categoryRoutes = require("./routes/categoryRoutes");
 const authRoutes = require("./routes/authRoutes");
 const videoReelRoutes = require("./routes/videoReelRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
@@ -69,6 +70,7 @@ app.use(cors(corsOptions));
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/video-reels", videoReelRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/categories", categoryRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

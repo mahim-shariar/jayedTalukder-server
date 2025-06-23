@@ -1,4 +1,5 @@
 const Review = require("../models/Review");
+const cloudinary = require("../utils/cloudinary");
 
 exports.getAllReviews = async (req, res, next) => {
   try {
@@ -21,7 +22,7 @@ exports.getAllReviews = async (req, res, next) => {
 
 exports.createReview = async (req, res, next) => {
   try {
-    const { content, rating, userName, screenshot } = req.body;
+    const { content, rating, userName, screenshot, screenshotId } = req.body;
 
     const newReview = await Review.create({
       content,
@@ -29,6 +30,7 @@ exports.createReview = async (req, res, next) => {
       user: req.user.id,
       userName,
       screenshot,
+      screenshotId,
     });
 
     res.status(201).json({
@@ -75,7 +77,7 @@ exports.updateReview = async (req, res, next) => {
 
 exports.deleteReview = async (req, res, next) => {
   try {
-    const review = await Review.findByIdAndDelete(req.params.id);
+    const review = await Review.findById(req.params.id);
 
     if (!review) {
       return res.status(404).json({
@@ -83,6 +85,13 @@ exports.deleteReview = async (req, res, next) => {
         message: "No review found with that ID",
       });
     }
+
+    // Delete screenshot from Cloudinary if screenshotId exists
+    if (review.screenshotId) {
+      await cloudinary.uploader.destroy(review.screenshotId);
+    }
+
+    await Review.findByIdAndDelete(req.params.id);
 
     res.status(204).json({
       status: "success",

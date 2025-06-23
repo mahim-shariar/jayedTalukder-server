@@ -20,6 +20,9 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please provide a screenshot"],
   },
+  screenshotId: {
+    type: String,
+  },
   user: {
     type: mongoose.Schema.ObjectId,
     ref: "User",
