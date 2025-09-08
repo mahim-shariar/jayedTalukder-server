@@ -8,7 +8,22 @@ exports.getAllVideoReels = async (req, res, next) => {
     const excludedFields = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((el) => delete queryObj[el]);
 
-    // 2) Advanced filtering for category
+    // Handle isBest filter - if isBest=true, only return videos where isBest=true
+    // If isBest is not provided or is false, return all videos
+    if (queryObj.isBest === "true") {
+      queryObj.isBest = true;
+    } else if (queryObj.isBest === "false") {
+      // If explicitly set to false, you might want to return non-best videos
+      // Or remove the filter to return all videos
+      delete queryObj.isBest; // Remove the filter to return all videos
+      // Alternatively, if you want to return only non-best videos:
+      // queryObj.isBest = false;
+    } else {
+      // If isBest is not provided, remove it from queryObj
+      delete queryObj.isBest;
+    }
+
+    // 2) Advanced filtering for category and other fields
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
 

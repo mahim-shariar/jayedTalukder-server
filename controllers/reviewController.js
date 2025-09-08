@@ -3,7 +3,16 @@ const cloudinary = require("../utils/cloudinary");
 
 exports.getAllReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find().populate("user", "name");
+    // Check if isBest filter is provided in query params
+    const { isBest } = req.query;
+    let filter = {};
+
+    // If isBest is provided and is 'true', filter by isBest: true
+    if (isBest && isBest.toLowerCase() === "true") {
+      filter.isBest = true;
+    }
+
+    const reviews = await Review.find(filter).populate("user", "name");
 
     res.status(200).json({
       status: "success",
@@ -22,7 +31,8 @@ exports.getAllReviews = async (req, res, next) => {
 
 exports.createReview = async (req, res, next) => {
   try {
-    const { content, rating, userName, screenshot, screenshotId } = req.body;
+    const { content, rating, userName, screenshot, screenshotId, isBest } =
+      req.body;
 
     const newReview = await Review.create({
       content,
@@ -31,6 +41,7 @@ exports.createReview = async (req, res, next) => {
       userName,
       screenshot,
       screenshotId,
+      isBest: isBest || false, // Default to false if not provided
     });
 
     res.status(201).json({

@@ -26,6 +26,10 @@ const videoReelSchema = new mongoose.Schema({
     required: [true, "Please enter a category"],
   },
   tags: [String],
+  isBest: {
+    type: Boolean,
+    default: false, // Default to false
+  },
   user: {
     type: mongoose.Schema.ObjectId,
     ref: "User",

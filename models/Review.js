@@ -14,7 +14,6 @@ const reviewSchema = new mongoose.Schema({
   userName: {
     type: String,
     required: [true, "Please provide a user name or brand name"],
-    required: true,
   },
   screenshot: {
     type: String,
@@ -22,6 +21,10 @@ const reviewSchema = new mongoose.Schema({
   },
   screenshotId: {
     type: String,
+  },
+  isBest: {
+    type: Boolean,
+    default: false,
   },
   user: {
     type: mongoose.Schema.ObjectId,
