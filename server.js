@@ -16,6 +16,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const authRoutes = require("./routes/authRoutes");
 const videoReelRoutes = require("./routes/videoReelRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const packageRoutes = require("./routes/packageRoutes");
 
 // Initialize Express app
 const app = express();
@@ -71,6 +72,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/video-reels", videoReelRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/categories", categoryRoutes);
+app.use("/api/v1/packages", packageRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
